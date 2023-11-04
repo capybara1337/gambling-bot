@@ -5,21 +5,31 @@ import db_manager as db
 
 bot = telebot.TeleBot(token)
 
-
 def main_menu(message: telebot.types.Message):
     markup = InlineKeyboardMarkup()
-    markup.row(InlineKeyboardButton('Взять деньги в долг', callback_data='lend_cash'))
-    markup.row(InlineKeyboardButton('Заказать напиток', callback_data='bar'))
-    markup.add(InlineKeyboardButton('Игры', callback_data='games'))
-    bot.send_message(message.chat.id, f'Ваш баланс: {db.get_info(message)[1]} \nВыберете действие:', reply_markup=markup)
-
+    markup.row(InlineKeyboardButton('Взять деньги в долг💸💸', callback_data='lend_cash'))
+    markup.row(InlineKeyboardButton('Заказать напиток🍸', callback_data='bar'))
+    markup.add(InlineKeyboardButton('Игры🎰', callback_data='games'))
+    bot.send_message(message.chat.id, f'Ваш баланс💰: {db.get_info(message)[3]} \nВыберете действие:', reply_markup=markup)
 
 @bot.message_handler(commands=['start'])
 def start(message: telebot.types.Message):
     db.create(message)
-    main_menu(message)
+    bot.send_message(message.chat.id, 'Привет, пожалуйста введи своё имя🥺: ')
+    bot.register_next_step_handler(message, user_name)
+    #main_menu(message)
 
-    
+def user_name(message):
+    name = message.text
+    db.addnametodb(message, name)
+    bot.send_message(message.chat.id, 'п-пожалуйста введи свою фамлилю🥵: ')
+    bot.register_next_step_handler(message, user_surname)
+
+def user_surname(message):
+    surname = message.text
+    db.addsurnametodb(message, surname)
+    bot.send_message(message.chat.id, 'поздравляю! ты теперь официальный гость влада козлова🤩')
+    main_menu(message)
 @bot.callback_query_handler(func=lambda callback: True)
 def callback_start(callback: telebot.types.CallbackQuery):
     # print(callback)
@@ -33,7 +43,6 @@ def callback_start(callback: telebot.types.CallbackQuery):
         pass
     if callback.data == 'games':
         pass
-
 def addlend(message: telebot.types.Message):
     try:
         amount = int(message.text.strip())
@@ -44,8 +53,4 @@ def addlend(message: telebot.types.Message):
         bot.register_next_step_handler(message, addlend)
         return
     main_menu(message)
-
-
-
-
 bot.polling()
