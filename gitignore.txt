@@ -1,0 +1,6 @@
+baseddata.db
+config.py
+/__pycache__
+bar.py
+blackjack.py
+admin.py
