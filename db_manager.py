@@ -32,6 +32,7 @@ def buy_event(message, event: str, events : dict):
     cur.execute("UPDATE users SET balance = ? WHERE chatid = ?", (balance - price, id))
     data.commit()
     data.close()
+
 def buy_bar(message, name : str, bar : dict):
     data = sqlite3.connect('baseddata.db')
     cur = data.cursor()
@@ -62,6 +63,71 @@ def addnametodb(message, name : list[str]):
     cur.execute("UPDATE users SET name = ?, surname = ? WHERE chatid = ?", (name[0], name[1], id))  
     data.commit()
     data.close()
+
+def getusersnames():
+    data = sqlite3.connect('baseddata.db')
+    cur = data.cursor()
+    cur.execute("SELECT name, surname FROM users")
+    s = cur.fetchall()
+    print(s)
+    data.commit()
+    data.close()
+    return s
+
+def get_names(message):
+    data = sqlite3.connect('baseddata.db')
+    cur = data.cursor()
+    id = message.chat.id
+    cur.execute("SELECT name, surname FROM users WHERE chatid != ?", (id,))
+    ls = cur.fetchall()
+    print(ls)
+    data.commit()
+    data.close()
+    return ls
+
+def check_wealth(message):
+    try:
+        cash = int(message.text)
+        if cash <= 0: raise ValueError
+        data = sqlite3.connect('baseddata.db')
+        cur = data.cursor()
+        id = message.chat.id
+        cur.execute("SELECT balance FROM users WHERE chatid = ?", (id,))
+        balance = cur.fetchone()[0]
+        if balance - cash * 1.03 >= 0:
+            data.commit()
+            data.close()
+            return 1
+        else:
+            data.commit()
+            data.close()
+            return -1
+    except ValueError:
+        return 0
+    
+def withdraw_money(message, id):
+    cash = int(message.text) 
+    data = sqlite3.connect('baseddata.db')
+    cur = data.cursor()
+    cur.execute("SELECT balance FROM users WHERE chatid = ?", (message.chat.id,))
+    balance = cur.fetchone()[0]
+    cur.execute("UPDATE users SET balance = ? WHERE chatid = ?", (balance - cash * 1.03, message.chat.id,))
+
+    cur.execute("SELECT balance FROM users WHERE chatid = ?", (id,))
+    balance = cur.fetchone()[0]
+    cur.execute("UPDATE users SET balance = ? WHERE chatid = ?", (balance + cash, id,))
+    data.commit()
+    data.close()
+
+def get_chat_id(message):
+    data = sqlite3.connect('baseddata.db')
+    cur = data.cursor()
+    name, surname = message[0], message[1]
+    cur.execute("SELECT chatid FROM users where name = ? AND surname = ?", (name, surname,))
+    id = cur.fetchone()[0]
+    data.commit()
+    data.close()
+    return id
 
 def getleaderboard():
     maxpositions = 10
