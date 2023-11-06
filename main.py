@@ -7,6 +7,8 @@ bot = telebot.TeleBot(token)
 
 bar = {'ягерьбомба' : 300, 'водка' : 100}
 
+events = {'Фотосет с кокаином' : 10, 'имя ивента #2' : 15, 'имя ивента #3' : 20, 'имя ивента #4' : 25}
+
 def main_menu(message: telebot.types.Message):
     markup = InlineKeyboardMarkup()
     markup.row(InlineKeyboardButton('Взять деньги в долг💸', callback_data='lend_cash'))
@@ -15,6 +17,7 @@ def main_menu(message: telebot.types.Message):
     markup.add(InlineKeyboardButton('Таблица лидеров🏅', callback_data='leaderboard'))
     markup.add(InlineKeyboardButton('Поздравить Влада с днём рождения🎉', callback_data='congratulations'))
     markup.add(InlineKeyboardButton('Изменить фамилию и имя✍️', callback_data='change_user'))
+    markup.add(InlineKeyboardButton('Меню ивентов🥳', callback_data='event_menu'))
     bot.send_message(message.chat.id, f'Ваши имя и фамилия: {db.get_info(message)[0]} {db.get_info(message)[1]} \nВаш баланс💰: {db.get_info(message)[3]} \nВыберете действие:', reply_markup=markup)
 
 @bot.message_handler(commands=['start'])
@@ -74,7 +77,15 @@ def callback_start(callback: telebot.types.CallbackQuery):
     if callback.data == 'change_user':
         bot.send_message(callback.message.chat.id, 'Пожалуйста введи своё имя и фамилию, через пробел🥺')
         bot.register_next_step_handler(callback.message, change_user_name)
-
+    if callback.data == 'event_menu':
+        markup = InlineKeyboardMarkup()
+        for i in events.items():
+            markup.add(InlineKeyboardButton(i[0] + ' | ' + str(i[1]), callback_data=i[0]))
+        bot.send_message(callback.message.chat.id, 'Выбери ивент, который ты хочешь заказать: ', reply_markup=markup)
+    if callback.data in events.keys():
+        db.buy_event(callback.message, callback.data, events)
+        bot.send_message(callback.message.chat.id, 'Ивент ' + callback.data + ' приобретен!')
+        
 def change_user_name(message):
     try:
         name = message.text.split(' ')

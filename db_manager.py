@@ -20,6 +20,18 @@ def create(message):
     data.commit()
     data.close()
 
+def buy_event(message, event: str, events : dict):
+    data = sqlite3.connect('baseddata.db')
+    cur = data.cursor()
+    id = message.chat.id
+    price = events.get(event)
+    cur.execute("SELECT balance FROM users WHERE chatid = ?", (id,))
+    balance = cur.fetchone()[0]
+    print(balance)
+    print(price)
+    cur.execute("UPDATE users SET balance = ? WHERE chatid = ?", (balance - price, id))
+    data.commit()
+    data.close()
 def buy_bar(message, name : str, bar : dict):
     data = sqlite3.connect('baseddata.db')
     cur = data.cursor()
