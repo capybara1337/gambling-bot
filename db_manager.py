@@ -87,3 +87,9 @@ def getleaderboard():
     data.commit()
     data.close()
     return leaderboard
+# data = sqlite3.connect('baseddata.db')
+# cur = data.cursor()
+# cur.execute("SELECT * FROM users")
+# print(cur.fetchall())
+# data.commit()
+# data.close()

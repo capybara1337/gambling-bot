@@ -5,7 +5,7 @@ import db_manager as db
 BANK = 10000
 bot = telebot.TeleBot(token)
 
-bar = {'Ягерьбомба' : 300, 'Водка' : 100}
+bar = {'ягерьбомба' : 300, 'водка' : 100}
 
 def main_menu(message: telebot.types.Message):
     markup = InlineKeyboardMarkup()
@@ -13,7 +13,9 @@ def main_menu(message: telebot.types.Message):
     markup.row(InlineKeyboardButton('Заказать напиток🍸', callback_data='bar'))
     markup.add(InlineKeyboardButton('Перевод денег за границу💱', callback_data='transaction'))
     markup.add(InlineKeyboardButton('Таблица лидеров🏅', callback_data='leaderboard'))
-    bot.send_message(message.chat.id, f'Ваш баланс💰: {db.get_info(message)[3]} \nВыберете действие:', reply_markup=markup)
+    markup.add(InlineKeyboardButton('Поздравить Влада с днём рождения🎉', callback_data='congratulations'))
+    markup.add(InlineKeyboardButton('Изменить фамилию и имя✍️', callback_data='change_user'))
+    bot.send_message(message.chat.id, f'Ваши имя и фамилия: {db.get_info(message)[0]} {db.get_info(message)[1]} \nВаш баланс💰: {db.get_info(message)[3]} \nВыберете действие:', reply_markup=markup)
 
 @bot.message_handler(commands=['start'])
 def start(message: telebot.types.Message):
@@ -23,8 +25,13 @@ def start(message: telebot.types.Message):
     #main_menu(message)
 
 def user_name(message):
-    name = message.text.split(' ')
-    db.addnametodb(message, name)
+    try:
+        name = message.text.split(' ')
+        db.addnametodb(message, name)
+    except IndexError:
+        bot.send_message(message.chat.id, 'Введите корректные данные, ИМЯ пробел ФАМИЛИЯ')
+        bot.register_next_step_handler(message, user_name)
+        return
     bot.send_message(message.chat.id, 'поздравляю! ты теперь официальный гость влада козлова🤩')
     main_menu(message)
 
@@ -44,7 +51,7 @@ def callback_start(callback: telebot.types.CallbackQuery):
         s = ''
         for i in bar.items():
             count+=1
-            s += str(count) + '. ' + i[0]+ ': ' + str(i[1]) + '\n'
+            s += str(count) + '. ' + i[0]+ ': ' + str(i[1]) + '💵\n'
         bot.send_message(callback.message.chat.id, s + 'Напишите наименование напитка, который вы хотите заказать🍹:')
         bot.register_next_step_handler(callback.message, bar_purchase)
     if callback.data == 'canceled':
@@ -55,11 +62,29 @@ def callback_start(callback: telebot.types.CallbackQuery):
         print(callback.data)
         bot.send_message(callback.message.chat.id, 'Покупка прошла успешно! Заказ отправлен бармену ✅')
         # Добавить отправку сообщения с заказом бармену :3
+        # bot.send_message(тут id бармена, 'Заказ: '+ callback.data + ' ' + db.get_info(message)[0] + db.get_info(message)[1])
         main_menu(callback.message)
     if callback.data == 'leaderboard':
         lb = db.getleaderboard()
         bot.send_message(callback.message.chat.id, lb)
         main_menu(callback.message)
+    if callback.data == 'congratulations':
+        # bot.send_message(тут id влада козлова, 'Поздравление от' + db.get_info(message)[0] + db.get_info(message)[1])
+        pass
+    if callback.data == 'change_user':
+        bot.send_message(callback.message.chat.id, 'Пожалуйста введи своё имя и фамилию, через пробел🥺')
+        bot.register_next_step_handler(callback.message, change_user_name)
+
+def change_user_name(message):
+    try:
+        name = message.text.split(' ')
+        db.addnametodb(message, name)
+    except IndexError:
+        bot.send_message(message.chat.id, 'Введите корректные данные, ИМЯ пробел ФАМИЛИЯ')
+        bot.register_next_step_handler(message, user_name)
+        return
+    bot.send_message(message.chat.id, 'Данные изменены успешно')
+    main_menu(message)
 
 def addlend(message: telebot.types.Message):
     try:
@@ -74,11 +99,14 @@ def addlend(message: telebot.types.Message):
 
 def bar_purchase(message: telebot.types.Message):
     id = message.chat.id
-    for i in bar.items():
-        if i[0] == message.text:
-            name = i[0]
-    markup = InlineKeyboardMarkup()
-    markup.row(InlineKeyboardButton('Купить🫰', callback_data=name))
-    markup.row(InlineKeyboardButton('Бросаю пить❤️‍🩹', callback_data='canceled'))
-    bot.send_message(message.chat.id, f'Ваш напиток : {message.text}', reply_markup=markup)  
+    name = message.text.strip()
+    print(name)
+    if name in bar.keys():
+        markup = InlineKeyboardMarkup()
+        markup.row(InlineKeyboardButton('Купить🫰', callback_data=name))
+        markup.row(InlineKeyboardButton('Бросаю пить❤️‍🩹', callback_data='canceled'))
+        bot.send_message(message.chat.id, f'Ваш напиток : {message.text}', reply_markup=markup)  
+    else:
+        bot.send_message(message.chat.id, 'Введите корректное название напитка')
+        bot.register_next_step_handler(message, bar_purchase)
 bot.polling()
