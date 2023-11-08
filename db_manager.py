@@ -85,6 +85,19 @@ def get_names(message):
     data.close()
     return ls
 
+def getallusers():
+    s = ''
+    data = sqlite3.connect('baseddata.db')
+    cur = data.cursor()
+    cur.execute("SELECT name, surname, isadmin balance FROM users")
+    ls = cur.fetchall()
+    for i in ls:
+        s = ls[0] + ' ' + ls[1] + 'Баланс: ' + ls[2] + 'Статус: ' + 'админ' if ls[3] == 1 else 'гость' +'\n'
+    data.commit()
+    data.close()
+    return s
+    
+
 def check_wealth(message):
     try:
         cash = int(message.text)
@@ -104,7 +117,7 @@ def check_wealth(message):
             return -1
     except ValueError:
         return 0
-    
+
 def withdraw_money(message, id):
     cash = int(message.text) 
     data = sqlite3.connect('baseddata.db')
