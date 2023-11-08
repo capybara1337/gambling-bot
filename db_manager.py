@@ -9,7 +9,7 @@ def create(message):
     cur.execute("""CREATE TABLE IF NOT EXISTS users(
         name tinytext,
         surname tinytext,
-        chatid integer,
+        chatid tinytext,
         balance integer,
         lent_cash integer,
         isadmin bit
@@ -89,10 +89,10 @@ def getallusers():
     s = ''
     data = sqlite3.connect('baseddata.db')
     cur = data.cursor()
-    cur.execute("SELECT name, surname, isadmin balance FROM users")
+    cur.execute("SELECT name, surname, balance, isadmin FROM users")
     ls = cur.fetchall()
     for i in ls:
-        s = ls[0] + ' ' + ls[1] + 'Баланс: ' + ls[2] + 'Статус: ' + 'админ' if ls[3] == 1 else 'гость' +'\n'
+        s = i[0] + ' ' + i[1] + ' Баланс: ' + str(i[2]) + ' Статус: ' + 'админ' if i[3] == 1 else 'гость' +'\n'
     data.commit()
     data.close()
     return s

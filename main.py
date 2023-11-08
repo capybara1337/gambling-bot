@@ -1,7 +1,6 @@
 import telebot
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 from config import token
-from config import admins
 import db_manager as db
 bot = telebot.TeleBot(token)
 bar = {'ягерьбомба' : 300, 'водка' : 100}
@@ -16,7 +15,7 @@ def main_menu(message: telebot.types.Message):
     markup.add(InlineKeyboardButton('Поздравить Влада с днём рождения🎉', callback_data='congratulations'))
     markup.add(InlineKeyboardButton('Изменить фамилию и имя✍️', callback_data='change_user'))
     markup.add(InlineKeyboardButton('Меню ивентов🥳', callback_data='event_menu'))
-    if db.get_info(message)[0] in admins:
+    if db.get_info(message)[5] == 1:
         markup.add(InlineKeyboardButton('Вывести всех пользователей💻', callback_data='admin_butt'))
     bot.send_message(message.chat.id, f'Ваши имя и фамилия: {db.get_info(message)[0]} {db.get_info(message)[1]} \nВаш баланс💰: {db.get_info(message)[3]} \nВыберете действие:', reply_markup=markup)
 
@@ -103,7 +102,10 @@ def callback_start(callback: telebot.types.CallbackQuery):
         main_menu(callback.message)
     if callback.data == 'leaderboard':
         lb = db.getleaderboard()
-        bot.send_message(callback.message.chat.id, lb)
+        if lb == '':
+            bot.send_message(callback.message.chat.id, 'Гостей ещё нет')
+        else:
+            bot.send_message(callback.message.chat.id, lb)
         main_menu(callback.message)
     if callback.data == 'congratulations':
         # bot.send_message(тут id влада козлова, 'Поздравление от' + db.get_info(message)[0] + db.get_info(message)[1])
