@@ -28,9 +28,10 @@ def start(message: telebot.types.Message):
 
 def user_name(message):
     try:
-        name = message.text.split(' ')
-        if name == '':
+        name = message.text
+        if name == None:
             raise IndexError
+        name = name.split(' ')
         db.addnametodb(message, name)
     except IndexError:
         bot.send_message(message.chat.id, 'Введите корректные данные, ИМЯ пробел ФАМИЛИЯ')
@@ -139,11 +140,14 @@ def callback_start(callback: telebot.types.CallbackQuery):
 
 def change_user_name(message):
     try:
-        name = message.text.split(' ')
+        name = message.text
+        if name == None:
+            raise IndexError
+        name = name.split(' ')
         db.addnametodb(message, name)
     except IndexError:
         bot.send_message(message.chat.id, 'Введите корректные данные, ИМЯ пробел ФАМИЛИЯ')
-        bot.register_next_step_handler(message, user_name)
+        bot.register_next_step_handler(message, change_user_name)
         return
     bot.send_message(message.chat.id, 'Данные изменены успешно')
     main_menu(message)
