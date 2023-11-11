@@ -5,7 +5,6 @@ def create(message):
     cur = data.cursor()
     id = message.chat.id   
     balance = check_privilege(id)
-    print(balance)
     cur.execute("""CREATE TABLE IF NOT EXISTS users(
         name tinytext,
         surname tinytext,
@@ -16,7 +15,6 @@ def create(message):
     )""")
     cur.execute("INSERT INTO users(name, surname, chatid, balance, lent_cash, isadmin) SELECT 0, 0, ?, ?, 0, ? WHERE NOT EXISTS (SELECT chatid FROM users WHERE chatid = ?)" , (id, balance[0], balance[1], id))
     cur.execute("SELECT * FROM users")
-    print(cur.fetchall())
     data.commit()
     data.close()
 
@@ -27,8 +25,8 @@ def buy_event(message, event: str, events : dict):
     price = events.get(event)
     cur.execute("SELECT balance FROM users WHERE chatid = ?", (id,))
     balance = cur.fetchone()[0]
-    print(balance)
-    print(price)
+    if balance - price <0:
+        raise ValueError
     cur.execute("UPDATE users SET balance = ? WHERE chatid = ?", (balance - price, id))
     data.commit()
     data.close()
@@ -40,8 +38,8 @@ def buy_bar(message, name : str, bar : dict):
     price = bar.get(name)
     cur.execute("SELECT balance FROM users WHERE chatid = ?", (id,))
     balance = cur.fetchone()[0]
-    print(balance)
-    print(price)
+    if balance - price <0:
+        raise ValueError
     cur.execute("UPDATE users SET balance = ? WHERE chatid = ?", (balance - price, id))
     data.commit()
     data.close()
@@ -51,7 +49,6 @@ def get_info(message):
     cur = data.cursor()
     id = message.chat.id
     info = list(cur.execute("SELECT * FROM users WHERE chatid = ?", (id,)))[0]
-    print(info)
     data.commit()
     data.close()
     return info
@@ -69,7 +66,6 @@ def getusersnames():
     cur = data.cursor()
     cur.execute("SELECT name, surname FROM users")
     s = cur.fetchall()
-    print(s)
     data.commit()
     data.close()
     return s
@@ -80,7 +76,6 @@ def get_names(message):
     id = message.chat.id
     cur.execute("SELECT name, surname FROM users WHERE chatid != ?", (id,))
     ls = cur.fetchall()
-    print(ls)
     data.commit()
     data.close()
     return ls
@@ -148,7 +143,6 @@ def getleaderboard():
     cur = data.cursor()
     cur.execute("SELECT COUNT(*) FROM users")
     cur_positions = cur.fetchone()[0]
-    print(cur_positions)
     cur.execute("SELECT surname, name, balance FROM users WHERE isadmin = 0 ORDER BY balance DESC")
     if 0 < cur_positions <= maxpositions:
         ls = cur.fetchmany(cur_positions)
@@ -178,9 +172,10 @@ def getleaderboard():
     data.commit()
     data.close()
     return leaderboard
-# data = sqlite3.connect('baseddata.db')
-# cur = data.cursor()
-# cur.execute("SELECT * FROM users")
-# print(cur.fetchall())
-# data.commit()
-# data.close()
+def Printalluser():
+    data = sqlite3.connect('baseddata.db')
+    cur = data.cursor()
+    cur.execute("SELECT * FROM users")
+    print(cur.fetchall())
+    data.commit()
+    data.close()
