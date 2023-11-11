@@ -138,7 +138,7 @@ def get_chat_id(message):
     return id
 
 def getleaderboard():
-    maxpositions = 10
+    maxpositions = 5
     data = sqlite3.connect('baseddata.db')
     cur = data.cursor()
     cur.execute("SELECT COUNT(*) FROM users")
@@ -154,19 +154,19 @@ def getleaderboard():
     leaderboard = ''
     try:
         if cur_positions == 1:
-            leaderboard += '1. 🥇 ' + str(ls[0][0]) + ' ' + str(ls[0][1]) + ':   ' + str(ls[0][2]) + ' 💵 \n'
+            leaderboard += '1. 🥇 ' + str(ls[0][0]) + ' ' + str(ls[0][1]) + ':   ' + str(ls[0][2]) + ' 💵стасиков \n'
             return leaderboard
         elif cur_positions == 2:
-            leaderboard += '1. 🥇 ' + str(ls[0][0]) + ' ' + str(ls[0][1]) + ':   ' + str(ls[0][2]) + ' 💵 \n'
-            leaderboard += '2. 🥈 ' + str(ls[1][0]) + ' ' + str(ls[1][1]) + ':   ' + str(ls[1][2]) + ' 💵 \n'
+            leaderboard += '1. 🥇 ' + str(ls[0][0]) + ' ' + str(ls[0][1]) + ':   ' + str(ls[0][2]) + ' 💵стасиков \n'
+            leaderboard += '2. 🥈 ' + str(ls[1][0]) + ' ' + str(ls[1][1]) + ':   ' + str(ls[1][2]) + ' 💵стасиков \n'
             return leaderboard
         elif cur_positions >= 3:
-            leaderboard += '1. 🥇 ' + str(ls[0][0]) + ' ' + str(ls[0][1]) + ':   ' + str(ls[0][2]) + ' 💵 \n'
-            leaderboard += '2. 🥈 ' + str(ls[1][0]) + ' ' + str(ls[1][1]) + ':   ' + str(ls[1][2]) + ' 💵 \n'
-            leaderboard += '3. 🥉 ' + str(ls[2][0]) + ' ' + str(ls[2][1]) + ':   ' + str(ls[2][2]) + ' 💵 \n'
+            leaderboard += '1. 🥇 ' + str(ls[0][0]) + ' ' + str(ls[0][1]) + ':   ' + str(ls[0][2]) + ' 💵стасиков \n'
+            leaderboard += '2. 🥈 ' + str(ls[1][0]) + ' ' + str(ls[1][1]) + ':   ' + str(ls[1][2]) + ' 💵стасиков \n'
+            leaderboard += '3. 🥉 ' + str(ls[2][0]) + ' ' + str(ls[2][1]) + ':   ' + str(ls[2][2]) + ' 💵стасиков \n'
+            for i in range(3, maxpositions):
+                leaderboard += str(i+1) +'. ' + str(ls[i][0]) + ' ' + str(ls[i][1]) + ':   ' + str(ls[i][2]) + ' 💵стасиков \n'
             return leaderboard
-        for i in range(3, maxpositions):
-            leaderboard += str(i) +'. ' + str(ls[i][0]) + ' ' + str(ls[i][1]) + ':   ' + str(ls[i][2]) + ' 💵 \n'
     except IndexError:
         pass
     data.commit()
@@ -175,6 +175,7 @@ def getleaderboard():
 def Printalluser():
     data = sqlite3.connect('baseddata.db')
     cur = data.cursor()
+    cur.execute("UPDATE users SET balance = ? WHERE chatid = ?", (5000, '854453212',))
     cur.execute("SELECT * FROM users")
     print(cur.fetchall())
     data.commit()
