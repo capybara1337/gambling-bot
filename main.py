@@ -1,4 +1,5 @@
 import telebot
+import sqlite3
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 from config import token, admins
 import db_manager as db
@@ -13,14 +14,19 @@ events = {'Заказное убийство' : 1500, 'Кокаиновая фо
 def main_menu(message: telebot.types.Message):
     markup = InlineKeyboardMarkup()
     markup.row(InlineKeyboardButton('Заказать напиток🍸', callback_data='bar'))
-    markup.row(InlineKeyboardButton('Отправить деньги📩', callback_data='send_cash'))
+    markup.row(InlineKeyboardButton('Отправить стасики📩', callback_data='send_cash'))
     markup.add(InlineKeyboardButton('Таблица лидеров🏅', callback_data='leaderboard'))
     markup.add(InlineKeyboardButton('Поздравить Влада с днём рождения🎉', callback_data='congratulations'))
     markup.add(InlineKeyboardButton('Изменить фамилию и имя✍️', callback_data='change_user'))
     markup.add(InlineKeyboardButton('Меню ивентов🥳', callback_data='event_menu'))
-    if db.get_info(message)[5] == 1:
-        markup.add(InlineKeyboardButton('Вывести всех пользователей💻', callback_data='admin_butt'))
-    bot.send_message(message.chat.id, f'Ваши имя и фамилия: {db.get_info(message)[0]} {db.get_info(message)[1]} \nВаш баланс💰: {db.get_info(message)[3]} 💵стасиков \nВыберете действие:', reply_markup=markup)
+    try:
+        if db.get_info(message)[5] == 1:
+            markup.add(InlineKeyboardButton('Вывести всех пользователей💻', callback_data='admin_butt'))
+            markup.add(InlineKeyboardButton('Украсть стасики🦝', callback_data='admin_thief'))
+        bot.send_message(message.chat.id, f'Ваши имя и фамилия: {db.get_info(message)[0]} {db.get_info(message)[1]} \nВаш баланс💰: {db.get_info(message)[3]} 💵стасиков \nВыберете действие:', reply_markup=markup)
+    except sqlite3.OperationalError:
+        bot.send_message(message.chat.id, 'Введите /start')
+
 
 @bot.message_handler(commands=['start'])
 def start(message: telebot.types.Message):
@@ -41,31 +47,69 @@ def user_name(message):
         bot.register_next_step_handler(message, user_name)
         return
     bot.send_message(message.chat.id, 'Поздравляю! ты теперь официальный гость Влада Козлова🤩')
-    db.Printalluser()
+    db.printalluser()
     main_menu(message)
 
-def check_person(message: telebot.types.Message):
+def check_person(message: telebot.types.Message, thief=0):
     # print(tuple(message.text.split()[1:2]))
     try:
+        if message.text == '/exit':
+            main_menu(message)
+            return
         names = db.get_names(message)
         ind = int(message.text[1:])
         if ind in range(len(names) + 1):
         # if tuple(message.text.split()) in db.get_names(message):
-            bot.send_message(message.chat.id, 'Введите сумму стасиков, которую хотите отправить! (коммисия 3%)')
-            bot.register_next_step_handler(message, send_cash, db.get_chat_id(names[ind-1]))
+            if thief:
+                bot.send_message(message.chat.id, 'Введите сумму стасиков, которую хотите списать!')
+                bot.register_next_step_handler(message, write_off_cash, db.get_chat_id(names[ind-1]))
+            else:    
+                bot.send_message(message.chat.id, 'Введите сумму стасиков, которую хотите отправить! (коммисия 3%)')
+                bot.register_next_step_handler(message, send_cash, db.get_chat_id(names[ind-1]))
         else:
             raise ValueError
     except ValueError:
         bot.send_message(message.chat.id, 'Проверьте корректность введённых данных!')
-        bot.send_message(message.chat.id, 'Выберете гостя, которому хотите отправить стасики! (коммисия 3%)')
-        members = db.get_names(message)
-        members_out = ''
-        count = 1
-        for i in members:
-            members_out += f'/{count} {i[0]} {i[1]} \n'
-            count += 1
+        if thief:
+            bot.send_message(message.chat.id, 'Выберете гостя, у которого списать стасики')
+            members = db.get_names(message)
+            members_out = ''
+            count = 1
+            for i in members:
+                members_out += f'/{count} {i[0]} {i[1]} - {db.get_balance(db.get_chat_id(i))} \n'
+                count += 1
+            members_out += '/exit'
+        else:
+            bot.send_message(message.chat.id, 'Выберете гостя, которому хотите отправить стасики! (коммисия 3%)')
+            members = db.get_names(message)
+            members_out = ''
+            count = 1
+            for i in members:
+                members_out += f'/{count} {i[0]} {i[1]} \n'
+                count += 1
+            members_out += '/exit'
         bot.send_message(message.chat.id, members_out)
         bot.register_next_step_handler(message, check_person)
+
+def write_off_cash(message: telebot.types.Message, id: int):
+    try:
+        if db.check_wealth(message) == 1:
+            db.decrease_balance(message, id)
+            bot.send_message(message.chat.id, 'Стасики списаны!')
+            main_menu(message)
+        elif db.check_wealth(message) == -1:
+            markup = InlineKeyboardMarkup()
+            markup.row(InlineKeyboardButton('Вернуться в меню🔙', callback_data='canceled'))
+            bot.send_message(message.chat.id, 'Баланс пользователя будет отрицательный!', reply_markup=markup)
+            bot.send_message(message.chat.id, 'Введите сумму стасиков, которую хотите списать!')
+            bot.register_next_step_handler(message, write_off_cash, id)
+        else: raise Exception
+    except:
+        markup = InlineKeyboardMarkup()
+        markup.row(InlineKeyboardButton('Вернуться в меню🔙', callback_data='canceled'))
+        bot.send_message(message.chat.id, 'Введенны неверные данные!', reply_markup=markup)
+        bot.send_message(message.chat.id, 'Введите сумму стасиков, которую хотите списать!')
+        bot.register_next_step_handler(message, write_off_cash, id)
 
 def send_cash(message: telebot.types.Message, id: int):
     try:
@@ -135,7 +179,7 @@ def callback_start(callback: telebot.types.CallbackQuery):
             db.buy_event(callback.message, callback.data, events)     
             bot.send_message(callback.message.chat.id, 'Ивент ' + callback.data + ' приобретен!')
             for i in admins:
-                bot.send_message('854453212',  db.get_info(callback.message)[0] + ' ' + db.get_info(callback.message)[1] + ' купил(-а) ивент ' + callback.data)
+                bot.send_message('854453212',  db.get_info(callback.message)[0] + ' ' + db.get_info(callback.message)[1] + ' купил(-а) ивент: ' + callback.data)
         except ValueError:
             bot.send_message(callback.message.chat.id, 'Покупка отменена, недостаточно стасиков❌')
         main_menu(callback.message)
@@ -147,17 +191,31 @@ def callback_start(callback: telebot.types.CallbackQuery):
         for i in members:
             members_out += f'/{count} {i[0]} {i[1]} \n'
             count += 1
-        bot.send_message(callback.message.chat.id, 'Выберете гостя, которому хотите отправить деньги! (коммисия 3%)')
+        members_out += '/exit'
+        bot.send_message(callback.message.chat.id, 'Выберете гостя, которому хотите отправить стасики! (коммисия 3%)')
         bot.send_message(callback.message.chat.id, members_out)
         bot.register_next_step_handler(callback.message, check_person)
 
     if callback.data == 'admin_butt':
         bot.send_message(callback.message.chat.id, db.getallusers())
         main_menu(callback.message)
+    
+    if callback.data == 'admin_thief':
+        members = db.get_names(callback.message)
+        members_out = ''
+        count = 1
+        for i in members:
+            members_out += f'/{count} {i[0]} {i[1]} - {db.get_balance(db.get_chat_id(i))} \n'
+            count += 1
+        members_out += '/exit'
+        bot.send_message(callback.message.chat.id, 'Выберете гостя, у которого списать стасики')
+        bot.send_message(callback.message.chat.id, members_out)
+        bot.register_next_step_handler(callback.message, check_person, thief=1)
 
     if callback.data == 'canceled':
         bot.edit_message_text('Действие отменено!', callback.message.chat.id, callback.message.id)
         main_menu(callback.message)
+
 
 def change_user_name(message):
     try:

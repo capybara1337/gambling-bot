@@ -53,6 +53,15 @@ def get_info(message):
     data.close()
     return info
 
+def get_balance(id):
+    data = sqlite3.connect('baseddata.db')
+    cur = data.cursor()
+    cur.execute("SELECT balance FROM users WHERE chatid = ?", (id,))
+    balance = cur.fetchall()[0]
+    data.commit()
+    data.close()
+    return balance[0]
+
 def addnametodb(message, name : list[str]):
     data = sqlite3.connect('baseddata.db')
     cur = data.cursor()
@@ -87,7 +96,8 @@ def getallusers():
     cur.execute("SELECT name, surname, balance, isadmin FROM users")
     ls = cur.fetchall()
     for i in ls:
-        s = i[0] + ' ' + i[1] + ' Баланс: ' + str(i[2]) + ' Статус: ' + 'админ' if i[3] == 1 else 'гость' +'\n'
+        print(i)
+        s = s + i[0] + ' ' + i[1] + ' | Баланс: ' + str(i[2]) + ' | Статус: ' + ('админ' if i[3] == 1 else 'гость') +'\n'
     data.commit()
     data.close()
     return s
@@ -102,16 +112,40 @@ def check_wealth(message):
         id = message.chat.id
         cur.execute("SELECT balance FROM users WHERE chatid = ?", (id,))
         balance = cur.fetchone()[0]
+        data.commit()
+        data.close()
         if balance - cash * 1.03 >= 0:
-            data.commit()
-            data.close()
             return 1
         else:
-            data.commit()
-            data.close()
             return -1
     except ValueError:
         return 0
+    
+def anti_debt(message, id):
+    try:
+        cash = int(message.text) 
+        data = sqlite3.connect('baseddata.db')
+        cur = data.cursor()
+        cur.execute("SELECT balance FROM users WHERE chatid = ?", (id,))
+        balance = cur.fetchone()[0]
+        data.commit()
+        data.close()
+        if balance - cash > 0:
+            return 1
+        else:
+            return -1
+    except ValueError:
+        return 0
+
+def decrease_balance(message, id):
+    cash = int(message.text) 
+    data = sqlite3.connect('baseddata.db')
+    cur = data.cursor()
+    cur.execute("SELECT balance FROM users WHERE chatid = ?", (id,))
+    balance = cur.fetchone()[0]
+    cur.execute("UPDATE users SET balance = ? WHERE chatid = ?", (balance - cash, id,))
+    data.commit()
+    data.close()
 
 def withdraw_money(message, id):
     cash = int(message.text) 
@@ -172,10 +206,10 @@ def getleaderboard():
     data.commit()
     data.close()
     return leaderboard
-def Printalluser():
+
+def printalluser():
     data = sqlite3.connect('baseddata.db')
     cur = data.cursor()
-    cur.execute("UPDATE users SET balance = ? WHERE chatid = ?", (5000, '854453212',))
     cur.execute("SELECT * FROM users")
     print(cur.fetchall())
     data.commit()
