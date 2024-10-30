@@ -136,6 +136,7 @@ def callback_start(callback: telebot.types.CallbackQuery):
         markup = InlineKeyboardMarkup()
         for i in bar.items():
             markup.add(InlineKeyboardButton(i[0] + ' | ' + str(i[1]), callback_data=i[0]))
+
         markup.add(InlineKeyboardButton('Вернуться в меню🔙', callback_data='canceled'))
         bot.send_message(callback.message.chat.id,'Напишите наименование напитка, который вы хотите заказать🍹:', reply_markup=markup)
 
@@ -145,22 +146,23 @@ def callback_start(callback: telebot.types.CallbackQuery):
             bot.send_message(callback.message.chat.id, 'Покупка прошла успешно! Заказ отправлен бармену ✅')
         except ValueError:
             bot.send_message(callback.message.chat.id, 'Покупка отменена, недостаточно стасиков❌')
-        # Добавить отправку сообщения с заказом бармену :3
-        bot.send_message('338011074', 'Заказ: '+ callback.data + ' ' + db.get_info(callback.message)[0] + db.get_info(callback.message)[1])
-        bot.send_message('442164116', 'Заказ: '+ callback.data + ' ' + db.get_info(callback.message)[0] + db.get_info(callback.message)[1])
-        bot.send_message('874896474', 'Заказ: '+ callback.data + ' ' + db.get_info(callback.message)[0] + db.get_info(callback.message)[1])
+        # Добавить отправку сообщения с заказом бармену 
+        bot.send_message('338011074', 'Заказ: '+ callback.data + ' ' + db.get_info(callback.message)[0]+ ' '  + db.get_info(callback.message)[1])
+        bot.send_message('442164116', 'Заказ: '+ callback.data + ' ' + db.get_info(callback.message)[0]+ ' '  + db.get_info(callback.message)[1])
+        bot.send_message('874896474', 'Заказ: '+ callback.data + ' ' + db.get_info(callback.message)[0]+ ' '  + db.get_info(callback.message)[1])
         main_menu(callback.message)
 
     if callback.data == 'leaderboard':
         lb = db.getleaderboard()
         if lb == '':
             bot.send_message(callback.message.chat.id, 'Гостей ещё нет')
+            
         else:
             bot.send_message(callback.message.chat.id, lb)
         main_menu(callback.message)
 
     if callback.data == 'congratulations':
-        bot.send_message('1988704372', 'Поздравление от: ' + db.get_info(callback.message)[0] + ' ' + db.get_info(callback.message)[1] + '!!!🎊')
+        pass
         main_menu(callback.message)
 
     if callback.data == 'change_user':
@@ -179,7 +181,7 @@ def callback_start(callback: telebot.types.CallbackQuery):
             db.buy_event(callback.message, callback.data, events)     
             bot.send_message(callback.message.chat.id, 'Ивент ' + callback.data + ' приобретен!')
             for i in admins:
-                bot.send_message('854453212',  db.get_info(callback.message)[0] + ' ' + db.get_info(callback.message)[1] + ' купил(-а) ивент: ' + callback.data)
+                bot.send_message(i,  db.get_info(callback.message)[0] + ' ' + db.get_info(callback.message)[1] + ' купил(-а) ивент: ' + callback.data)
         except ValueError:
             bot.send_message(callback.message.chat.id, 'Покупка отменена, недостаточно стасиков❌')
         main_menu(callback.message)
